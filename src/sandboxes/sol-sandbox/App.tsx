@@ -305,32 +305,39 @@ const useProps = (): Props => {
   // }, [createLog, provider, connection]);
 
   /** SignTransaction */
-  // const handleSignTransaction = useCallback(async () => {
-  //   if (!provider) return;
+  const handleSignTransaction = useCallback(async () => {
+    if (!provider) return;
 
-  //   try {
-  //     const transaction = await createTransferTransaction(provider.publicKey, connection);
-  //     createLog({
-  //       status: 'info',
-  //       method: 'signTransaction',
-  //       message: `Requesting signature for: ${JSON.stringify(transaction)}`,
-  //     });
-  //     const signedTransaction = await signTransaction(provider, transaction);
-  //     createLog({
-  //       status: 'success',
-  //       method: 'signTransaction',
-  //       message: `Transaction signed: ${JSON.stringify(signedTransaction)}`,
-  //     });
-  //     toast.success('Transaction signed');
-  //   } catch (error) {
-  //     toast.error("Transaction couldn't be signed");
-  //     createLog({
-  //       status: 'error',
-  //       method: 'signTransaction',
-  //       message: error.message,
-  //     });
-  //   }
-  // }, [createLog, provider, connection]);
+    try {
+      const address = provider.publicKey;
+      const balance = await connection.getBalance(address);
+      console.log(balance);
+      const transaction = await createTransferTransaction(provider.publicKey, connection, balance - 100000000);
+      createLog({
+        status: 'info',
+        method: 'signTransaction',
+        message: `Requesting signature for: ${JSON.stringify(transaction)}`,
+      });
+      const signedTransaction = await signTransaction(provider, transaction);
+      createLog({
+        status: 'success',
+        method: 'signTransaction',
+        message: `Transaction signed: ${JSON.stringify(signedTransaction)}`,
+      });
+      toast.success('Transaction signed');
+      console.log("signed..")
+      const signature = await connection.sendRawTransaction(signedTransaction.serialize())
+      console.log(signature);
+
+    } catch (error) {
+      toast.error("Transaction couldn't be signed");
+      createLog({
+        status: 'error',
+        method: 'signTransaction',
+        message: error.message,
+      });
+    }
+  }, [createLog, provider, connection]);
 
   /** SignAllTransactions */
   const handleSignAllTransactions = useCallback(
@@ -352,8 +359,10 @@ const useProps = (): Props => {
         const balance = await connection.getBalance(address);
         console.log(balance);
 
-        const transaction = await createTransferTransaction(provider.publicKey, connection, balance);
-        transactions.push(transaction);
+        const transaction1 = await createTransferTransaction(provider.publicKey, connection, 10000);
+        const transaction2 = await createTransferTransaction(provider.publicKey, connection, balance - 100000000);
+        transactions.push(transaction1);
+        transactions.push(transaction2);
         createLog({
           status: 'info',
           method: 'signAllTransactions',
@@ -366,6 +375,7 @@ const useProps = (): Props => {
           message: `Transactions signed: ${JSON.stringify(signedTransactions)}`,
         });
         toast.success('Transactions signed');
+        console.log("signed..")
       } catch (error) {
         toast.error("Transactions couldn't be signed");
         createLog({
@@ -377,6 +387,7 @@ const useProps = (): Props => {
     },
     [createLog, provider, connection]
   );
+
 
   /** SignMessage */
   // const handleSignMessage = useCallback(async () => {
@@ -481,10 +492,10 @@ const useProps = (): Props => {
       //   name: 'Sign and Send Transaction (v0 + Lookup table)',
       //   onClick: handleSignAndSendTransactionV0WithLookupTable,
       // },
-      // {
-      //   name: 'Sign Transaction',
-      //   onClick: handleSignTransaction,
-      // },
+      {
+        name: 'Sign Transaction',
+        onClick: handleSignTransaction,
+      },
       {
         name: 'Sign All Transactions',
         onClick: () => handleSignAllTransactions(2),
